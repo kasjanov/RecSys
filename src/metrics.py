@@ -129,6 +129,54 @@ def reciprocal_rank_at_k(recommended_list, bought_list, k):
 
     return rank
 
+def ap_k(recommended_list, bought_list, k=5):
+    bought_list = np.array(bought_list)
+    recommended_list = np.array(recommended_list)
+    recommended_list = recommended_list[recommended_list <= k]
+    
+    
+    flags = np.isin(recommended_list, bought_list)
+    relevant_indexes = []
+    for i in range(k):
+        if flags[i] == False:
+            relevant_indexes.append(0)
+        else:
+            relevant_indexes.append(1)
+           
+    amount_relevant = len(relevant_indexes)
+
+    sum_ = sum(
+        [precision_at_k(recommended_list, bought_list, k=index_relevant + 1) for index_relevant in relevant_indexes])
+    return sum_ / amount_relevant
+
+def ap_k_2(recommended_list, bought_list, k=5):
+    
+    bought_list = np.array(bought_list)
+    recommended_list = np.array(recommended_list)
+    
+    flags = np.isin(recommended_list, bought_list)
+    flag = []
+    for i in range(k):
+        if flags[i] == False:
+            flag.append(0)
+        else:
+            flag.append(1)
+    
+    if sum(flag) == 0:
+        return 0
+    
+    sum_ = 0
+    for i in range(k): 
+        if flag[i] == 1:
+            p_k = precision_at_k(recommended_list, bought_list, k=i)
+            sum_ += p_k
+            
+    result = sum_ / sum(flag)
+    
+    return result
+
+
+
 
 def mrr_at_k(data, k):
     return data.apply(lambda x: reciprocal_rank_at_k(x[1], x[2], k), 1).mean()
@@ -139,15 +187,24 @@ def ndcg_at_k(recommended_list, bought_list, k):
     recommended_list = np.array(recommended_list)
 
     recommended_list = recommended_list[:k]
-
-    flags = np.isin(bought_list, recommended_list)
-
+    
+    flags = np.isin(recommended_list, bought_list)
+    flag = []
+    for i in range(k):
+        if flags[i] == False:
+            flag.append(0)
+        else:
+            flag.append(1)
+                
     dcg = 0
     idcg = 0
-    if len(flags) < k:
-        k = len(flags)
+   
+    if len(flag) < k:
+        k = len(flag)
+ 
+    
     for i in range(k):
-        dcg_i = (flags[i] * 1) / np.log2(i + 2)
+        dcg_i = (int(flag[i]) * 1) / np.log2(i + 2)
         idcg_i = 1 / np.log2(i + 2)
         dcg += dcg_i
         idcg += idcg_i
